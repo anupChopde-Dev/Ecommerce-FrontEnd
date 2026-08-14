@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { DataTable } from "../../components/common/DataTable";
+import { useState } from "react"
+import { DataTable } from "../../components/common/DataTable"
+import { VendorFormModal } from "../../components/modals/VendorFormModal"
 
 const vendorHeaders = [
   "storeName",
@@ -119,53 +120,71 @@ const demoVendors = [
   },
 ];
 
-export function AdminVendors() {
-  const [vendors, setVendors] = useState(demoVendors);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
-  const totalPages = Math.max(1, Math.ceil(vendors.length / pageSize));
-//   const visibleVendors = useMemo(
-//     () => vendors.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-//     [vendors, currentPage],
-//   );
+const Vendors = () => {
+  const [vendors, setVendors] = useState(demoVendors)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingVendor, setEditingVendor] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 5
+  const totalPages = Math.max(1, Math.ceil(vendors.length / pageSize))
+
+  const handleCreate = () => {
+    setEditingVendor(null)
+    setModalOpen(true)
+  }
+
+  const handleEdit = (vendor) => {
+    setEditingVendor(vendor)
+    setModalOpen(true)
+  }
+
+  const handleSave = (formData) => {
+    if (editingVendor) {
+      setVendors((prev) =>
+        prev.map((v) => (v.id === editingVendor.id ? { ...v, ...formData } : v))
+      )
+    } else {
+      const newVendor = {
+        id: Date.now(),
+        storeName: formData.shopName,
+        ownerName: formData.name,
+        email: formData.email,
+        status: formData.status,
+        totalSales: "$0",
+        ...formData,
+      }
+      setVendors((prev) => [...prev, newVendor])
+    }
+  }
 
   return (
-    <DataTable
-      headers={vendorHeaders}
-      rows={vendors}
-      rowKey="id"
-      tableName="Vendors"
-      visibleRows={10}
-      emptyMessage="No vendors found."
-      sortableFields={["storeName", "ownerName", "status", "totalSales"]}
-    //   createLabel="Add vendor"
-    //   onCreate={() => console.log("Create vendor")}
-      onShow={(vendor) => console.log("Show vendor", vendor)}
-      onEdit={(vendor) => console.log("Edit vendor", vendor)}
-      onDelete={(vendor) => setVendors((current) => {
-        const remaining = current.filter((item) => item.id !== vendor.id);
-        return remaining;
-      })}
-    //   pagination
-    //  currentPage={currentPage}
-    //  totalPages={totalPages}
-    //  onPageChange={(page) => setCurrentPage(page)}
+    <>
+      <DataTable
+        headers={vendorHeaders}
+        rows={vendors}
+        rowKey="id"
+        tableName="Vendors"
+        visibleRows={10}
+        emptyMessage="No vendors found."
+        sortableFields={["storeName", "ownerName", "status", "totalSales"]}
+        createLabel="Add vendor"
+        onCreate={handleCreate}
+        onShow={(vendor) => console.log("Show vendor", vendor)}
+        onEdit={handleEdit}
+        onDelete={(vendor) => setVendors((current) => {
+          const remaining = current.filter((item) => item.id !== vendor.id)
+          return remaining
+        })}
+        searchable
+      />
+      <VendorFormModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingVendor(null) }}
+        vendor={editingVendor}
+        onSave={handleSave}
+      />
+    </>
+  )
+}
 
-      searchable
-    // searchValue={search}
-    // onSearchChange={handleSearchChange}
-    />
-  );
-}
-export function AdminOrders() {
-  return null;
-}
-export function AdminCatalog() {
-  return null;
-}
-export function AdminReports() {
-  return null;
-}
-export function AdminSettings() {
-  return null;
-}
+export default Vendors
